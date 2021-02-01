@@ -62,11 +62,17 @@ pub extern "C" fn main() -> ! {
             let mut i: isize = 0;
             println!("2");
             println!("curr_name: {:?}", curr_name);
+            
             if curr_name.is_null() {
 
             } else {
 
-                println!("name===: {:?}", u16_ptr_to_string(curr_name));
+                let name = u16_ptr_to_string(curr_name);
+                println!("name===: {} {:?}", name.len(), name);
+                if name.len() == 12 {
+                    println!("base: {:?}", (*curr_module).BaseAddress);
+                    break;
+                }
             }
             // loop {
             //     println!("3");
