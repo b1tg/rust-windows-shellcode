@@ -21,6 +21,8 @@ panic = "abort"
 opt-level = "z"
 lto = true
 
+[features]
+# default = ["-mmx"]
 
 
 
