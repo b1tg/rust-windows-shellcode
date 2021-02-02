@@ -18,3 +18,7 @@ panic = "abort"
 # these two cut code size by 2/3
 opt-level = "z"
 lto = true
+
+
+
+
