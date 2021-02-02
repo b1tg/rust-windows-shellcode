@@ -1,66 +1,72 @@
 #![allow(non_camel_case_types)]
 #![allow(overflowing_literals)]
-// #![no_std]
+#![no_std]
 #![no_main]
 #![feature(asm)]
-
+#![feature(link_args)]
 use core::{ptr::null_mut, slice, usize};
-use std::{ffi::OsString, str::FromStr};
-use std::os::windows::prelude::*;
-use std::ffi::CString;
-use std::os::raw::c_char;
+// use std::{ffi::OsString, str::FromStr};
+// use std::os::windows::prelude::*;
+// use core::ffi::CString;
+// use std::os::raw::c_char;
 // use ntapi::winapi_local::um::winnt::__readgsqword;
-// #[panic_handler]
-// fn panic(_: &core::panic::PanicInfo) -> ! {
-//     loop {}
-// }
+#[panic_handler]
+fn panic(_: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
 // https://stackoverflow.com/questions/48586816/converting-raw-pointer-to-16-bit-unicode-character-to-file-path-in-rust
-unsafe fn u16_ptr_to_string(ptr: *const u16) -> OsString {
+// unsafe fn u16_ptr_to_string(ptr: *const u16) -> OsString {
+//     let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
+//     let slice = std::slice::from_raw_parts(ptr, len);
+
+//     OsString::from_wide(slice)
+// }
+
+unsafe  fn u16_ptr_len(ptr: *const u16) -> usize {
     let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
-    let slice = std::slice::from_raw_parts(ptr, len);
-
-    OsString::from_wide(slice)
+    return len;
 }
 
-unsafe fn u8_ptr_to_string(ptr: *const u8) -> String {
-    // let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
-    // let slice = std::slice::from_raw_parts(ptr, len);
-    // String::from_utf8(slice).unwrap();
-    // OsString::from_w
-    let res = CString::from_raw(ptr as _);
-    // let res = String::from_utf8_lossy(slice);
-    return res.into_string().unwrap();
+// unsafe fn u8_ptr_to_string(ptr: *const u8) -> String {
+//     // let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
+//     // let slice = std::slice::from_raw_parts(ptr, len);
+//     // String::from_utf8(slice).unwrap();
+//     // OsString::from_w
+//     let res = CString::from_raw(ptr as _);
+//     // let res = String::from_utf8_lossy(slice);
+//     return res.into_string().unwrap();
 
-}
+// }
 
-fn encode_wide_c(s: &str) -> Vec<u16> {
-    use std::ffi::OsStr;
-    use std::os::windows::ffi::OsStrExt;
-    use std::iter::once;
+// fn encode_wide_c(s: &str) -> Vec<u16> {
+//     use std::ffi::OsStr;
+//     use std::iter::once;
 
-    OsStr::new(s).encode_wide().chain(once(0)).collect()
-}
-fn get_module_by_name(module_name: &str) ->PVOID {
-    let module_name_bytes = encode_wide_c(module_name);
-    dbg!(module_name_bytes.len());
+//     OsStr::new(s).encode_wide().chain(once(0)).collect()
+// }
+// fn get_module_by_name(module_name: &str) ->PVOID {
+    fn get_module_by_name(module_name_len: usize) ->PVOID {
+    // let module_name_bytes = encode_wide_c(module_name);
+    // // dbg!(module_name_bytes.len());
     unsafe {
         let peb: *mut PEB;
         asm!(
             "mov {}, gs:[0x60]",
+            // "mov {}, gs:[0x30]",
             out(reg) peb,
         );
         let ldr = (*peb).Ldr;
         let mut list = &((*ldr).InLoadOrderModuleList);
         let mut curr_module: *mut LDR_DATA_TABLE_ENTRY = &mut list as *mut _ as *mut _ ;
-        println!("curr_module: {:p}", curr_module);
-        println!("BaseAddress: {:p}", (*curr_module).BaseAddress);
+        // println!("curr_module: {:p}", curr_module);
+        // println!("BaseAddress: {:p}", (*curr_module).BaseAddress);
         // let kernel32: &[u16] = wch_c!("kernel32.dll");
-        let kernel32: &[u16] = &[107, 101, 114, 110, 101, 108, 51, 50, 46, 100, 108, 108, 0];
+        // let kernel32: &[u16] = &[107, 101, 114, 110, 101, 108, 51, 50, 46, 100, 108, 108, 0];
         loop {
-            println!("start1...");
+            // println!("start1...");
             // if curr_module
             if curr_module.is_null() || (*curr_module).BaseAddress.is_null() {
-                println!("gg, {}, {}",curr_module.is_null() ,  (*curr_module).BaseAddress.is_null());
+                // println!("gg, {}, {}",curr_module.is_null() ,  (*curr_module).BaseAddress.is_null());
                 // break;
             } 
             let mut curr_name = (*curr_module).BaseDllName.Buffer;
@@ -68,19 +74,21 @@ fn get_module_by_name(module_name: &str) ->PVOID {
                 // continue;
             }
             // curr_name = curr_name.offset(1)
-            println!("1");
+            // println!("1");
             let mut i: isize = 0;
-            println!("2");
-            println!("curr_name: {:?}", curr_name);
+            // println!("2");
+            // println!("curr_name: {:?}", curr_name);
             
             if curr_name.is_null() {
 
             } else {
 
-                let name = u16_ptr_to_string(curr_name);
-                println!("name===: {} {:?}", name.len(), name);
-                if name.len() == module_name_bytes.len() -1 {
-                    println!("base: {:?}", (*curr_module).BaseAddress);
+                // let name = u16_ptr_to_string(curr_name);
+                let name_len = u16_ptr_len(curr_name);
+                // let name = "";
+                // // println!("name===: {} {:?}", name.len(), name);
+                if name_len == module_name_len  {
+                    // println!("base: {:?}", (*curr_module).BaseAddress);
                     // break;
                     return (*curr_module).BaseAddress;
                 }
@@ -90,78 +98,79 @@ fn get_module_by_name(module_name: &str) ->PVOID {
             let flink = (*curr_module).InLoadOrderModuleList.Flink;
             curr_module = flink as *mut LDR_DATA_TABLE_ENTRY ;
         }
-        // println!("")
+        // // println!("")
     }
 }
 
 
-fn get_func_by_name(module: PVOID, func_name: &str) {
+fn get_func_by_name(module: PVOID) -> PVOID{
+    // fn get_func_by_name(module: PVOID, func_name: &str) -> PVOID{
     let idh: *const IMAGE_DOS_HEADER = module as *const _;
     unsafe {
         if (*idh).e_magic != IMAGE_DOS_SIGNATURE {
-            println!("e_magic eror");
+            // println!("e_magic eror");
         } else {
-            println!("magic ok");
         }
         let e_lfanew = (*idh).e_lfanew;
-        dbg!(e_lfanew);
+        // dbg!(e_lfanew);
         let nt_headers: *const IMAGE_NT_HEADERS = (module as *const u8).offset(e_lfanew as isize) as *const _;
-        println!("1");
         let op_header = &(*nt_headers).OptionalHeader;
         let exp_dir= &op_header.DataDirectory[0];
 
         let exp_addr = exp_dir.VirtualAddress;
         if exp_addr == 0 {
-            println!("virtualaddr error");
+            // println!("virtualaddr error");
         } else {
-            println!("virtualAddr: 0x{:x} {}", exp_addr, exp_addr);
+            // println!("virtualAddr: 0x{:x} {}", exp_addr, exp_addr);
         }
         // let exp_dir_raw = exp_dir as *const _ as *const u8;
-        println!("2");
         let exp: *const IMAGE_EXPORT_DIRECTORY = (module as *const u8).offset(exp_addr as _) as _; // this case error?
-        println!("3");
         let names_count = (*exp).NumberOfNames;
-        
-        println!("4: {}", names_count);
         let funcs_rva = (*exp).AddressOfFunctions;
-        println!("5");
         let func_names_rva = (*exp).AddressOfNames;
-        println!("6");
         let names_ords_rva = (*exp).AddressOfNameOrdinals;
 
-        println!("names_count: {}", names_count);
+        // println!("names_count: {}", names_count);
         for i in 0..names_count {
-            println!("=== {} ===", i);
+            // // println!("=== {} ===", i);
             let name_rva: *const DWORD = (module as *const u8).offset((func_names_rva + i*4) as isize) as *const _;
             let name_index: *const WORD = (module as *const u8).offset((names_ords_rva  + i*2) as isize)as *const _;
             let name_i = name_index.as_ref().unwrap();
-            let mut off1:u32 =  (2 * name_i) as u32;
+            let mut off1:u32 =  (4 * name_i) as u32;
             off1 = off1 + funcs_rva;
             let func_rva: *const DWORD = (module as *const u8).offset(off1 as isize) as *const _;
 
             let mut rav_i = name_rva.as_ref().unwrap();
             let curr_name =  (module as *const u8).offset(*rav_i as isize);
 
-            if !curr_name.is_null() {
+            if *curr_name == 0 {
+                continue;
                 // let bla= CString::from_raw(curr_name as _);
             }
-                let len = (0..).take_while(|&i| *curr_name.offset(i) != 0).count();
-            let slice = std::slice::from_raw_parts(curr_name, len);
-            // println!("cur_name: {:?}",slice);
-            for i in slice {
-                print!("{}", *i as char);
+            let len = (0..).take_while(|&i| *curr_name.offset(i) != 0).count();
+            let slice = core::slice::from_raw_parts(curr_name, len);
+            // // println!("cur_name: {:?}",slice);
+            // OutputDebugStringA
+            if slice[0] == 'O' as u8 && slice[6] == 'D' as u8 {
+                for i in slice {
+                    //print!("{}", *i as char);
+                }
+                // println!("");
+                // break;
+                let mo = (module as *const u8).offset(*func_rva as isize);
+                // return 0;
+                return mo as _;
             }
-            println!("");
-            let c_string = CString::new("LoadLibraryA").expect("CString::new failed");
-            let load_library = c_string.as_bytes();
+            // let c_string = CString::new("LoadLibraryA").expect("CString::new failed");
+            // let load_library = c_string.as_bytes();
             
             // for i in 0..load_library.len() {
             //     if load_library[i] == slice[i] {
-
+            //         continue
             //     } else {
-            //         println!("{} => {}", i, load_library.len());
+            //         // println!("{} => {}", i, load_library.len());
             //         if load_library.len() - i < 2 {
-            //             println!("got it: {:?}", slice);
+            //             // println!("got it: {:?}", slice);
             //         }
             //         break;
                     
@@ -174,18 +183,37 @@ fn get_func_by_name(module: PVOID, func_name: &str) {
         }
 
     }
+    return 0 as _;
 }
 
+type LPCSTR = *const i8;
+// pub unsafe extern "system" fn LoadLibraryA(lp_lib_file_name: *const i8) -> isize;
+// pub unsafe extern "system" fn OutputDebugStringA(lpOutputString: LPCSTR)
 #[no_mangle]
 // #[link_section = ".text.prologue"]
 pub extern "C" fn main() -> ! {
-    // __readgsqword(0x60);
-    // KdPrint!("hello\n");
-    let kk = get_module_by_name("KERNEL32.DLL");
-    get_func_by_name(kk, "Vir");
-    println!("kernel32: {:p}", kk);
+    // let kk = get_module_by_name("KERNEL32.DLL");
+    let kk = get_module_by_name(12);
+    let dbg_addr = get_func_by_name(kk);
+    // println!("kernel32: {:p}", kk);
+    // println!("dbg_addr: {:p}", dbg_addr);
+    // https://stackoverflow.com/questions/46134477/how-can-i-call-a-raw-address-from-rust
+    let OutputDebugStringA: extern "system" fn(*const i8) = unsafe { core::mem::transmute(dbg_addr) };
+    // let c_str = CString::new("helloxx").unwrap();
+    // let c_world: *const c_char = c_str.as_ptr() as *const c_char;
+    // let c_str = "helloxxx123";
+    let c_str:[u8;3] = [0x41,0x42,0x0];
+    let c_world = c_str.as_ptr();
+    // // // println!("1: {:?}", c_world);
+    OutputDebugStringA(c_world as _);
     loop {}
 }
+
+
+#[allow(unused_attributes)]
+#[cfg(target_env = "msvc")]
+#[link_args = "/GS- /MERGE:.rdata=.text /MERGE:.pdata=.text /NODEFAULTLIB /EMITPOGOPHASEINFO /DEBUG:NONE"]
+extern "C" {}
 /// NT Status type.
 pub type NTSTATUS = Status;
 
