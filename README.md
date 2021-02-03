@@ -9,3 +9,7 @@ https://github.com/Trantect/win_driver_example
 https://not-matthias.github.io/kernel-driver-with-rust/
 https://github.com/pravic/winapi-kmd-rs
 https://github.com/johnthagen/min-sized-rust
+
+
+edit
+https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=4acc288a658ce23cb2c3da66aa818b8d
