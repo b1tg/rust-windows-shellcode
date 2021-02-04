@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(overflowing_literals)]
 #![no_std]
@@ -5,63 +6,72 @@
 #![feature(asm)]
 #![feature(link_args)]
 use core::{ptr::null_mut, slice, usize};
-// use std::{ffi::OsString, str::FromStr};
-// use std::os::windows::prelude::*;
-// use std::ffi::CString;
-// use std::os::raw::c_char;
-// use ntapi::winapi_local::um::winnt::__readgsqword;
+mod binds;
+mod utils;
+use binds::*;
+use utils::*;
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
+// use winapi::um::libloaderapi::LoadLibraryA;
 
+// pub type LLA = extern "stdcall" LoadLibraryA;
 #[no_mangle]
 // #[link_section = ".text.prologue"]
 pub extern "C" fn main() -> ! {
     // "KERNEL32.DLL"
-    let KERNEL32_STR:[u16;13]= [75, 69, 82, 78, 69, 76, 51, 50, 46, 68, 76, 76, 0];
+    let KERNEL32_STR: [u16; 13] = [75, 69, 82, 78, 69, 76, 51, 50, 46, 68, 76, 76, 0];
     let kk = get_module_by_name(KERNEL32_STR.as_ptr());
     // println!("kernel32: {:p}", kk);
     // let kk = get_module_by_name(12);
-    let OutputDebugStringA_STR:[u8;19] = [79, 117, 116, 112, 117, 116, 68, 101, 98, 117, 103, 83, 116, 114, 105, 110, 103, 65, 0];
+    let OutputDebugStringA_STR: [u8; 19] = [
+        79, 117, 116, 112, 117, 116, 68, 101, 98, 117, 103, 83, 116, 114, 105, 110, 103, 65, 0,
+    ];
     let dbg_addr = get_func_by_name(kk, OutputDebugStringA_STR.as_ptr());
     // "LoadLibraryA"
-    let LoadLibraryA_STR:[u8;13] = [76, 111, 97, 100, 76, 105, 98, 114, 97, 114, 121, 65, 0];
+    let LoadLibraryA_STR: [u8; 13] = [76, 111, 97, 100, 76, 105, 98, 114, 97, 114, 121, 65, 0];
     let load_library = get_func_by_name(kk, LoadLibraryA_STR.as_ptr());
 
     // "GetProcAddress"
-    let GetProcAddress_STR:[u8;15] = [71, 101, 116, 80, 114, 111, 99, 65, 100, 100, 114, 101, 115, 115, 0];
+    let GetProcAddress_STR: [u8; 15] = [
+        71, 101, 116, 80, 114, 111, 99, 65, 100, 100, 114, 101, 115, 115, 0,
+    ];
     let get_proc = get_func_by_name(kk, GetProcAddress_STR.as_ptr());
     // println!("dbg_addr: {:p}", dbg_addr);
     // println!("load_library: {:p}", load_library);
 
     let LoadLibraryA: extern "system" fn(lpFileName: LPCSTR) -> PVOID =
         unsafe { core::mem::transmute(load_library) };
+    // let LoadLibraryA_ :LoadLibraryA = unsafe { core::mem::transmute(load_library) };
     // let a = "user32.dll";
     // let c_str = CString::new("user32.dll").unwrap();
     // let c_world: *const c_char = c_str.as_ptr() as *const c_char;
     // let c_world =  b"user32.dll\0".as_ptr() as *const i8;
-    let c_world:[i8;11] =[117, 115, 101, 114, 51, 50, 46, 100, 108, 108, 0];
-    unsafe{asm!("push rax");}
+    let c_world: [i8; 11] = [117, 115, 101, 114, 51, 50, 46, 100, 108, 108, 0];
+    // unsafe{asm!("push rax");}
     let u32_dll = LoadLibraryA(c_world.as_ptr());
     // println!("u32_dll: {:p}", u32_dll);
 
     // pub unsafe extern "system" fn GetProcAddress(
-    //     hModule: HMODULE, 
+    //     hModule: HMODULE,
     //     lpProcName: LPCSTR
     // ) -> FARPROC
 
-    let GetProcAddress: extern "system" fn(hmodule: PVOID, name: LPCSTR) -> PVOID = unsafe {core::mem::transmute(get_proc)} ;
+    let GetProcAddress: extern "system" fn(hmodule: PVOID, name: LPCSTR) -> PVOID =
+        unsafe { core::mem::transmute(get_proc) };
 
     // let c_str = CString::new("MessageBoxA").unwrap();
     // let c_world: *const c_char = c_str.as_ptr() as *const c_char;
     // let c_world =  b"MessageBoxA\0".as_ptr() as *const i8;
-    let c_world:[i8;12] = [77, 101, 115, 115, 97, 103, 101, 66, 111, 120, 65, 0];
-    let message_box_ptr = GetProcAddress(u32_dll, c_world.as_ptr());
+    let c_world: [i8; 12] = [77, 101, 115, 115, 97, 103, 101, 66, 111, 120, 65, 0];
+    let c_world1 = b"xxx";
+    let message_box_ptr = GetProcAddress(u32_dll, c_world1.as_ptr() as _);
 
     // println!("message_box_ptr: {:p}", message_box_ptr);
 
-    let MessageBoxA: extern "system" fn(h: PVOID, text: LPCSTR, cation: LPCSTR, t:u32) -> u32 = unsafe {core::mem::transmute(message_box_ptr)};
+    let MessageBoxA: extern "system" fn(h: PVOID, text: LPCSTR, cation: LPCSTR, t: u32) -> u32 =
+        unsafe { core::mem::transmute(message_box_ptr) };
 
     MessageBoxA(null_mut(), c_world.as_ptr(), c_world.as_ptr(), 0x30);
     // https://stackoverflow.com/questions/46134477/how-can-i-call-a-raw-address-from-rust
@@ -72,120 +82,15 @@ pub extern "C" fn main() -> ! {
     // let c_str:[u8;3] = [0x41,0x42,0x0];
     // let c_world = c_str.as_ptr();
     // // // // println!("1: {:?}", c_world);
-    OutputDebugStringA(c_world.as_ptr());
+    // let msg = b"mmmmsg";
+    // let msg: &[u8] = [b'a', b'b'];
+    //let a = "abc";
+
+    // OutputDebugStringA(msg.as_ptr() as _);
     loop {}
 }
 
-// https://stackoverflow.com/questions/48586816/converting-raw-pointer-to-16-bit-unicode-character-to-file-path-in-rust
-// unsafe fn u16_ptr_to_string(ptr: *const u16) -> OsString {
-//     let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
-//     let slice = std::slice::from_raw_parts(ptr, len);
-
-//     OsString::from_wide(slice)
-// }
-
-unsafe fn u16_ptr_len(ptr: *const u16) -> usize {
-    let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
-    return len;
-}
-
-// unsafe fn u8_ptr_to_string(ptr: *const u8) -> String {
-//     // let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
-//     // let slice = std::slice::from_raw_parts(ptr, len);
-//     // String::from_utf8(slice).unwrap();
-//     // OsString::from_w
-//     let res = CString::from_raw(ptr as _);
-//     // let res = String::from_utf8_lossy(slice);
-//     return res.into_string().unwrap();
-
-// }
-
-// fn encode_wide_c(s: &str) -> Vec<u16> {
-//     use std::ffi::OsStr;
-//     use std::iter::once;
-
-//     OsStr::new(s).encode_wide().chain(once(0)).collect()
-// }
-fn compare_str_u16(s: &str, u: *const u16) -> bool {
-    unsafe {
-        let len = (0..).take_while(|&i| *u.offset(i) != 0).count();
-        let slice = core::slice::from_raw_parts(u, len);
-        let s_len = s.len();
-        if len != s_len {
-            return false;
-        }
-        let ss = s.as_bytes();
-        for i in 0..len {
-            if slice[i] != ss[i] as u16 {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-// #[inline(always)]
-fn compare_u16_u16(s:  *const u16, u: *const u16) -> bool {
-    unsafe {
-        let u_len = (0..).take_while(|&i| *u.offset(i) != 0).count();
-        let u_slice = core::slice::from_raw_parts(u, u_len);
-
-        let s_len = (0..).take_while(|&i| *s.offset(i) != 0).count();
-        let s_slice = core::slice::from_raw_parts(s, s_len);
-
-        if s_len != u_len {
-            return false;
-        }
-        for i in 0..s_len {
-            if s_slice[i] != u_slice[i]  {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-// #[inline(always)]
-fn compare_u8_u8(s:  *const u8, u: *const u8) -> bool {
-    unsafe {
-        let u_len = (0..).take_while(|&i| *u.offset(i) != 0).count();
-        let u_slice = core::slice::from_raw_parts(u, u_len);
-
-        let s_len = (0..).take_while(|&i| *s.offset(i) != 0).count();
-        let s_slice = core::slice::from_raw_parts(s, s_len);
-
-        if s_len != u_len {
-            return false;
-        }
-        for i in 0..s_len {
-            if s_slice[i] != u_slice[i]  {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-fn compare_str_u8(s: &str, u: *const u8) -> bool {
-    unsafe {
-        let len = (0..).take_while(|&i| *u.offset(i) != 0).count();
-        let slice = core::slice::from_raw_parts(u, len);
-        let s_len = s.len();
-        if len != s_len {
-            return false;
-        }
-        let ss = s.as_bytes();
-        for i in 0..len {
-            if slice[i] != ss[i] as u8 {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-fn str_to_i8(s: &str) -> *const i8 {
-    s.as_bytes().as_ptr() as *const i8
-}
-// #[inline(always)] 
-fn get_module_by_name(module_name:*const u16) -> PVOID {
+fn get_module_by_name(module_name: *const u16) -> PVOID {
     unsafe {
         let peb: *mut PEB;
         asm!(
@@ -218,11 +123,10 @@ fn get_module_by_name(module_name:*const u16) -> PVOID {
             if curr_name.is_null() {
             } else {
                 // let name = u16_ptr_to_string(curr_name);
-                let name_len = u16_ptr_len(curr_name);
                 // let name = "";
                 // // // println!("name===: {} {:?}", name.len(), name);
                 // if name_len == module_name.len()  {
-                if compare_u16_u16(module_name, curr_name) {
+                if compare_raw_str(module_name, curr_name) {
                     // println!("base: {:?}", (*curr_module).BaseAddress);
                     // break;
                     return (*curr_module).BaseAddress;
@@ -237,8 +141,8 @@ fn get_module_by_name(module_name:*const u16) -> PVOID {
     }
 }
 
-// fn get_func_by_name(module: PVOID) -> PVOID{
-// #[inline(always)]
+// type LoadLibraryA
+
 fn get_func_by_name(module: PVOID, func_name: *const u8) -> PVOID {
     let idh: *const IMAGE_DOS_HEADER = module as *const _;
     unsafe {
@@ -290,7 +194,7 @@ fn get_func_by_name(module: PVOID, func_name: *const u8) -> PVOID {
             // // // println!("cur_name: {:?}",slice);
             // OutputDebugStringA
             // if slice[0] == 'O' as u8 && slice[6] == 'D' as u8 {
-            if compare_u8_u8(func_name, curr_name) {
+            if compare_raw_str(func_name, curr_name) {
                 // for i in slice {
                 //print!("{}", *i as char);
                 // }
@@ -322,40 +226,14 @@ fn get_func_by_name(module: PVOID, func_name: *const u8) -> PVOID {
     return 0 as _;
 }
 
-type LPCSTR = *const i8;
 // pub unsafe extern "system" fn LoadLibraryA(lp_lib_file_name: *const i8) -> isize;
 // pub unsafe extern "system" fn OutputDebugStringA(lpOutputString: LPCSTR)
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_compare_str_u16() {
-        let a = "AB";
-        let a1: &[u16] = &[0x41, 0x42, 0x0];
-        compare_str_u16(a, a1.as_ptr());
-    }
-}
 
 #[allow(unused_attributes)]
 #[cfg(target_env = "msvc")]
 #[link_args = "/GS- /MERGE:.rdata=.text /MERGE:.pdata=.text /NODEFAULTLIB /EMITPOGOPHASEINFO /DEBUG:NONE"]
 extern "C" {}
 /// NT Status type.
-pub type NTSTATUS = Status;
-type HMODULE = HINSTANCE;
-type HINSTANCE = *mut HINSTANCE__;
-pub enum HINSTANCE__ {}
-/// A specialized `Result` type for NT operations.
-pub type Result<T> = ::core::result::Result<T, Status>;
-
-/// NT Status code.
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub enum Status {
-    success = 0,
-    unsuccessful = 0xC0000001,
-}
 
 extern "C" {
     // /// `DbgPrint` routine sends a message to the kernel debugger.
@@ -368,187 +246,3 @@ extern "C" {
 // macro_rules! KdPrint {
 // 	($msg:expr $(, $arg:expr)*) => { unsafe { DbgPrint( concat!($msg, "\0").as_ptr() $(, $arg )* )} };
 // }
-pub enum c_void {}
-type BOOLEAN = u8;
-type HANDLE = *mut c_void;
-type PVOID = *mut c_void;
-type ULONG = u32;
-type LPSTR = *mut i8;
-#[repr(C)]
-pub struct PEB {
-    pub InheritedAddressSpace: BOOLEAN,
-    pub ReadImageFileExecOptions: BOOLEAN,
-    pub BeingDebugged: BOOLEAN,
-    pub BitField: BOOLEAN,
-    pub Mutant: HANDLE,
-    pub ImageBaseAddress: PVOID,
-    pub Ldr: *mut PEB_LDR_DATA,
-    pub ProcessParameters: *mut RTL_USER_PROCESS_PARAMETERS,
-}
-
-#[repr(C)]
-pub struct PEB_LDR_DATA {
-    pub Length: ULONG,
-    pub Initialized: BOOLEAN,
-    pub SsHandle: HANDLE,
-    pub InLoadOrderModuleList: LIST_ENTRY,
-    // ...
-}
-
-#[repr(C)]
-pub struct LDR_DATA_TABLE_ENTRY {
-    pub InLoadOrderModuleList: LIST_ENTRY,
-    pub InMemoryOrderModuleList: LIST_ENTRY,
-    pub InInitializationOrderModuleList: LIST_ENTRY,
-    pub BaseAddress: PVOID,
-    pub EntryPoint: PVOID,
-    pub SizeOfImage: ULONG,
-    pub FullDllName: UNICODE_STRING,
-    pub BaseDllName: UNICODE_STRING,
-    // ...
-}
-
-type USHORT = u16;
-type PWCH = *mut u16;
-type DWORD = u32;
-type WORD = u16;
-type ULONGLONG = u64;
-type BYTE = u8;
-type LONG = u32;
-
-#[repr(C)]
-pub struct UNICODE_STRING {
-    pub Length: USHORT,
-    pub MaximumLength: USHORT,
-    pub Buffer: PWCH,
-}
-
-#[repr(C)]
-pub struct LIST_ENTRY {
-    pub Flink: *mut LIST_ENTRY,
-    pub Blink: *mut LIST_ENTRY,
-}
-#[repr(C)]
-pub struct RTL_USER_PROCESS_PARAMETERS {
-    pub MaximumLength: ULONG,
-    pub Length: ULONG,
-    pub Flags: ULONG,
-    pub DebugFlags: ULONG,
-    pub ConsoleHandle: HANDLE,
-    pub ConsoleFlags: ULONG,
-    pub StandardInput: HANDLE,
-    pub StandardOutput: HANDLE,
-    pub StandardError: HANDLE,
-}
-
-type PULONG = *mut ULONG;
-#[repr(C)]
-pub struct IO_STATUS_BLOCK {
-    _1: IO_STATUS_BLOCK_u,
-    _2: PULONG,
-}
-
-#[repr(C)]
-pub union IO_STATUS_BLOCK_u {
-    _1: NTSTATUS,
-    _2: PVOID,
-}
-
-// ====
-#[repr(C)]
-pub struct IMAGE_DATA_DIRECTORY {
-    pub VirtualAddress: DWORD,
-    pub Size: DWORD,
-}
-#[repr(C)]
-pub struct IMAGE_DOS_HEADER {
-    pub e_magic: WORD,
-    pub e_cblp: WORD,
-    pub e_cp: WORD,
-    pub e_crlc: WORD,
-    pub e_cparhdr: WORD,
-    pub e_minalloc: WORD,
-    pub e_maxalloc: WORD,
-    pub e_ss: WORD,
-    pub e_sp: WORD,
-    pub e_csum: WORD,
-    pub e_ip: WORD,
-    pub e_cs: WORD,
-    pub e_lfarlc: WORD,
-    pub e_ovno: WORD,
-    pub e_res: [WORD; 4],
-    pub e_oemid: WORD,
-    pub e_oeminfo: WORD,
-    pub e_res2: [WORD; 10],
-    pub e_lfanew: LONG,
-}
-
-#[repr(C)]
-pub struct IMAGE_EXPORT_DIRECTORY {
-    pub Characteristics: DWORD,
-    pub TimeDateStamp: DWORD,
-    pub MajorVersion: WORD,
-    pub MinorVersion: WORD,
-    pub Name: DWORD,
-    pub Base: DWORD,
-    pub NumberOfFunctions: DWORD,
-    pub NumberOfNames: DWORD,
-    pub AddressOfFunctions: DWORD,
-    pub AddressOfNames: DWORD,
-    pub AddressOfNameOrdinals: DWORD,
-}
-type ULONG_PTR = usize;
-
-pub const IMAGE_DOS_SIGNATURE: WORD = 0x5A4D;
-
-type IMAGE_NT_HEADERS = IMAGE_NT_HEADERS64;
-#[repr(C)]
-pub struct IMAGE_NT_HEADERS64 {
-    pub Signature: DWORD,
-    pub FileHeader: IMAGE_FILE_HEADER,
-    pub OptionalHeader: IMAGE_OPTIONAL_HEADER64,
-}
-
-#[repr(C)]
-pub struct IMAGE_FILE_HEADER {
-    pub Machine: WORD,
-    pub NumberOfSections: WORD,
-    pub TimeDateStamp: DWORD,
-    pub PointerToSymbolTable: DWORD,
-    pub NumberOfSymbols: DWORD,
-    pub SizeOfOptionalHeader: WORD,
-    pub Characteristics: WORD,
-}
-#[repr(C)]
-pub struct IMAGE_OPTIONAL_HEADER64 {
-    pub Magic: WORD,
-    pub MajorLinkerVersion: BYTE,
-    pub MinorLinkerVersion: BYTE,
-    pub SizeOfCode: DWORD,
-    pub SizeOfInitializedData: DWORD,
-    pub SizeOfUninitializedData: DWORD,
-    pub AddressOfEntryPoint: DWORD,
-    pub BaseOfCode: DWORD,
-    pub ImageBase: ULONGLONG,
-    pub SectionAlignment: DWORD,
-    pub FileAlignment: DWORD,
-    pub MajorOperatingSystemVersion: WORD,
-    pub MinorOperatingSystemVersion: WORD,
-    pub MajorImageVersion: WORD,
-    pub MinorImageVersion: WORD,
-    pub MajorSubsystemVersion: WORD,
-    pub MinorSubsystemVersion: WORD,
-    pub Win32VersionValue: DWORD,
-    pub SizeOfImage: DWORD,
-    pub SizeOfHeaders: DWORD,
-    pub CheckSum: DWORD,
-    pub Subsystem: WORD,
-    pub DllCharacteristics: WORD,
-    pub SizeOfStackReserve: ULONGLONG,
-    pub SizeOfStackCommit: ULONGLONG,
-    pub SizeOfHeapReserve: ULONGLONG,
-    pub SizeOfHeapCommit: ULONGLONG,
-    pub LoaderFlags: DWORD,
-    pub NumberOfRvaAndSizes: DWORD,
-    pub DataDirectory: [IMAGE_DATA_DIRECTORY; 16],
-}

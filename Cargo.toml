@@ -23,6 +23,34 @@ lto = true
 
 [features]
 # default = ["-mmx"]
+[dependencies.winapi]
+version = "0.3"
+features = [
+  "ntdef",
+  "winnt",
+  "dbghelp",
+  "minwindef",
+
+  "impl-debug"
+]
 
 
+[build-dependencies.winapi]
+version = "0.3"
+features = [
+  "ntdef",
+  "winnt",
+  "dbghelp",
+  "minwindef",
+  "libloaderapi",
 
+  "impl-debug"
+]
+
+[dependencies.num]
+version = "0.3"
+default-features = false
+
+[dependencies.num-traits]
+version = "0.2"
+default-features = false
