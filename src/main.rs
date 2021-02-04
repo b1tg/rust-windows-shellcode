@@ -6,8 +6,10 @@
 #![feature(asm)]
 #![feature(link_args)]
 use core::{ptr::null_mut, slice, usize};
+
 mod binds;
 mod utils;
+use arrayvec::ArrayString;
 use binds::*;
 use utils::*;
 #[panic_handler]
@@ -15,13 +17,18 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 // use winapi::um::libloaderapi::LoadLibraryA;
-
 // pub type LLA = extern "stdcall" LoadLibraryA;
 #[no_mangle]
 // #[link_section = ".text.prologue"]
 pub extern "C" fn main() -> ! {
     // "KERNEL32.DLL"
+    unsafe {
+        asm!("mov rcx, 0", "mov rdx, 0",);
+    }
     let KERNEL32_STR: [u16; 13] = [75, 69, 82, 78, 69, 76, 51, 50, 46, 68, 76, 76, 0];
+    // let KERNEL32_STR = "KERNEL32.DLL";
+    // username: Username::try_from_str("user")?,
+    // let KERNEL32_STR = KK20::try_from_str("KERNEL32.DLL");
     let kk = get_module_by_name(KERNEL32_STR.as_ptr());
     // println!("kernel32: {:p}", kk);
     // let kk = get_module_by_name(12);
@@ -47,10 +54,13 @@ pub extern "C" fn main() -> ! {
     // let a = "user32.dll";
     // let c_str = CString::new("user32.dll").unwrap();
     // let c_world: *const c_char = c_str.as_ptr() as *const c_char;
-    // let c_world =  b"user32.dll\0".as_ptr() as *const i8;
-    let c_world: [i8; 11] = [117, 115, 101, 114, 51, 50, 46, 100, 108, 108, 0];
-    // unsafe{asm!("push rax");}
-    let u32_dll = LoadLibraryA(c_world.as_ptr());
+    let c_world = b"user32.dll\0".as_ptr() as *const i8;
+    // let c_world: [i8; 11] = [117, 115, 101, 114, 51, 50, 46, 100, 108, 108, 0];
+
+    unsafe {
+        asm!("push rax");
+    }
+    let u32_dll = LoadLibraryA(c_world);
     // println!("u32_dll: {:p}", u32_dll);
 
     // pub unsafe extern "system" fn GetProcAddress(
@@ -63,17 +73,22 @@ pub extern "C" fn main() -> ! {
 
     // let c_str = CString::new("MessageBoxA").unwrap();
     // let c_world: *const c_char = c_str.as_ptr() as *const c_char;
-    // let c_world =  b"MessageBoxA\0".as_ptr() as *const i8;
-    let c_world: [i8; 12] = [77, 101, 115, 115, 97, 103, 101, 66, 111, 120, 65, 0];
-    let c_world1 = b"xxx";
-    let message_box_ptr = GetProcAddress(u32_dll, c_world1.as_ptr() as _);
+    let c_world = b"MessageBoxA\0".as_ptr() as *const i8;
+    // let c_world: [i8; 12] = [77, 101, 115, 115, 97, 103, 101, 66, 111, 120, 65, 0];
+    // let c_world1 = b"xxx";
+    let c_world1 = "title\0";
+    // let c_world1 = aa + "123";
+    // c_world1.to_uppercase();
+    // let mut u = ArrayString::from_byte_string(b"hello world").unwrap();
+    // u.push_str("abc");
+    let message_box_ptr = GetProcAddress(u32_dll, c_world);
 
     // println!("message_box_ptr: {:p}", message_box_ptr);
 
     let MessageBoxA: extern "system" fn(h: PVOID, text: LPCSTR, cation: LPCSTR, t: u32) -> u32 =
         unsafe { core::mem::transmute(message_box_ptr) };
 
-    MessageBoxA(null_mut(), c_world.as_ptr(), c_world.as_ptr(), 0x30);
+    MessageBoxA(null_mut(), c_world, c_world1.as_ptr() as _, 0x30);
     // https://stackoverflow.com/questions/46134477/how-can-i-call-a-raw-address-from-rust
     let OutputDebugStringA: extern "C" fn(*const i8) = unsafe { core::mem::transmute(dbg_addr) };
     // let c_str = CString::new("helloxx").unwrap();

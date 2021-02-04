@@ -54,3 +54,6 @@ default-features = false
 [dependencies.num-traits]
 version = "0.2"
 default-features = false
+[dependencies.arrayvec]
+version = "0.5.2"
+default-features = false
