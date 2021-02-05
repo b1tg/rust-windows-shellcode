@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+
+
 unsafe fn u16_ptr_len(ptr: *const u16) -> usize {
     let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
     return len;
@@ -21,7 +24,22 @@ fn compare_str_u16(s: &str, u: *const u16) -> bool {
     }
 }
 
-use core::cmp::PartialEq;
+// TODO: use alloc
+pub fn str_to_u16_ptr(s: &str, buf: &mut [u16]) {
+    let s_len = s.len();
+    let s_bytes = s.as_bytes();
+
+    // for i in 0..255 {
+
+    // }
+    // let buf = vec![0u16;s_len+1];
+    for i in 0..s_len {
+        buf[i] = s_bytes[i] as _;
+    }
+    buf[s_len] = 0;
+    //    buf.as_ptr()
+}
+
 use num_traits::Num;
 
 pub fn compare_raw_str<T>(s: *const T, u: *const T) -> bool
@@ -68,11 +86,3 @@ fn compare_str_u8(s: &str, u: *const u8) -> bool {
 fn str_to_i8(s: &str) -> *const i8 {
     s.as_bytes().as_ptr() as *const i8
 }
-
-// https://stackoverflow.com/questions/48586816/converting-raw-pointer-to-16-bit-unicode-character-to-file-path-in-rust
-// unsafe fn u16_ptr_to_string(ptr: *const u16) -> OsString {
-//     let len = (0..).take_while(|&i| *ptr.offset(i) != 0).count();
-//     let slice = std::slice::from_raw_parts(ptr, len);
-
-//     OsString::from_wide(slice)
-// }

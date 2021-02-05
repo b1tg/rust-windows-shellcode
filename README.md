@@ -13,3 +13,6 @@ https://github.com/johnthagen/min-sized-rust
 
 edit
 https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=4acc288a658ce23cb2c3da66aa818b8d
+
+
+https://stackoverflow.com/questions/46134477/how-can-i-call-a-raw-address-from-rust

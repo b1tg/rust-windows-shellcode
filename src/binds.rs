@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
+#![allow(dead_code)]
 
 pub enum c_void {}
 pub type BOOLEAN = u8;
@@ -28,6 +29,7 @@ pub struct PEB_LDR_DATA {
     // ...
 }
 
+pub type PLDR_DATA_TABLE_ENTRY = *const LDR_DATA_TABLE_ENTRY;
 #[repr(C)]
 pub struct LDR_DATA_TABLE_ENTRY {
     pub InLoadOrderModuleList: LIST_ENTRY,

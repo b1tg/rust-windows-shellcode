@@ -15,8 +15,13 @@ rustflags = [
     #"-C", "link-arg=/OPT:REF,ICF",
     "-C", "link-arg=/MERGE:.edata=.rdata",
     "-C", "link-arg=/MERGE:.rustc=.data",
+    "-C", "link-arg=/MERGE:.rdata=.text",
+    "-C", "link-arg=/MERGE:.pdata=.text",
     #"-C", "link-arg=/INTEGRITYCHECK"
+    "-C", "link-arg=/DEBUG:NONE",
+    "-C", "link-arg=/EMITPOGOPHASEINFO",
+    "-C", "target-feature=-mmx,-sse,+soft-float"
 
-   "-C", "target-feature=-mmx,-sse,+soft-float"
+    
 
 ]
