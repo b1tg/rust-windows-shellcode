@@ -1,0 +1,30 @@
+[package]
+name = "shellcode"
+version = "0.1.0"
+authors = ["b1tg <b1tg@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+
+[profile.dev]
+panic = "abort"
+# these two cut code size by 2/3
+opt-level = "z"
+lto = true
+
+[profile.release]
+panic = "abort"
+# these two cut code size by 2/3
+opt-level = "z"
+lto = true
+
+[dependencies.num]
+version = "0.3"
+default-features = false
+
+[dependencies.num-traits]
+version = "0.2"
+default-features = false

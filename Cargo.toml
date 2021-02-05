@@ -1,5 +1,5 @@
 [package]
-name = "wo"
+name = "rust_windows_shellcode"
 version = "0.1.0"
 authors = ["b1tg <b1tg@users.noreply.github.com>"]
 edition = "2018"
@@ -7,53 +7,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-
-[profile.dev]
-panic = "abort"
-# these two cut code size by 2/3
-opt-level = "z"
-lto = true
-
-[profile.release]
-panic = "abort"
-# these two cut code size by 2/3
-opt-level = "z"
-lto = true
-
-[features]
-# default = ["-mmx"]
-[dependencies.winapi]
-version = "0.3"
-features = [
-  "ntdef",
-  "winnt",
-  "dbghelp",
-  "minwindef",
-
-  "impl-debug"
-]
-
-
-[build-dependencies.winapi]
-version = "0.3"
-features = [
-  "ntdef",
-  "winnt",
-  "dbghelp",
-  "minwindef",
-  "libloaderapi",
-
-  "impl-debug"
-]
-
-[dependencies.num]
-version = "0.3"
-default-features = false
-
-[dependencies.num-traits]
-version = "0.2"
-default-features = false
-[dependencies.arrayvec]
-version = "0.5.2"
-default-features = false
+goblin = "0.3.0"
+anyhow = "1.0.34"
+iced-x86 = "1.10.0"
