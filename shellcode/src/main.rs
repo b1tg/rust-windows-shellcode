@@ -41,7 +41,7 @@ pub extern "C" fn main() -> ! {
     let LoadLibraryA: LoadLibraryAFn = unsafe { core::mem::transmute(load_library_ptr) };
 
     // make stack align
-    unsafe { asm!("push rax") };
+    unsafe { asm!("and rsp, ~0xf") };
     let u32_dll = LoadLibraryA(USER32_DLL.as_ptr() as *const i8);
     let GetProcAddress: GetProcAddressFn = unsafe { core::mem::transmute(get_proc) };
     let message_box_ptr = GetProcAddress(u32_dll, MessageBoxA_.as_ptr() as *const i8);
