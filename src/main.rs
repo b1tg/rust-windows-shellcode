@@ -1,12 +1,12 @@
-use anyhow::{Result};
+use anyhow::Result;
 use goblin::pe::PE;
+use iced_x86::{Decoder, DecoderOptions, Formatter, Instruction, NasmFormatter};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
-use iced_x86::{Decoder, DecoderOptions, Formatter, Instruction, NasmFormatter};
 
 fn main() -> Result<()> {
-    let src_path = "shellcode\\target\\x86_64-pc-windows-msvc\\release\\wo.exe";
+    let src_path = "shellcode\\target\\x86_64-pc-windows-msvc\\release\\shellcode.exe";
     let mut file = File::open(src_path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
@@ -19,36 +19,36 @@ fn main() -> Result<()> {
             continue;
         }
         let start = section.pointer_to_raw_data as usize;
-        let size =  section.size_of_raw_data as usize;
+        let size = section.size_of_raw_data as usize;
         let dst_path = "shellcode\\target\\x86_64-pc-windows-msvc\\release\\shellcode.bin";
         let shellcode = File::create(dst_path)?;
         let mut buf_writer = BufWriter::new(shellcode);
         println!("[*] section text addr: 0x{:x}, size: 0x{:x}", start, size);
         println!("[*] entry offset: 0x{:x}", entry_offset);
         println!("== before patch ==");
-        show_disassemble(&buffer[start..start+size], 5);
+        show_disassemble(&buffer[start..start + size], 5);
         if entry_offset >= 0x100 {
-            buffer[0+start] = 0xe9;
-            let hi = (entry_offset-2) / 0x100;
-            let li = (entry_offset-2) % 0x100;
+            buffer[0 + start] = 0xe9;
+            let hi = (entry_offset - 2) / 0x100;
+            let li = (entry_offset - 2) % 0x100;
             dbg!(hi, li);
-            buffer[1+start] = li as _; 
-            buffer[2+start] = hi as _; 
-            buffer[3+start] = 0 as _; 
-            buffer[4+start] = 0 as _; 
+            buffer[1 + start] = li as _;
+            buffer[2 + start] = hi as _;
+            buffer[3 + start] = 0 as _;
+            buffer[4 + start] = 0 as _;
         } else if entry_offset >= 0x80 {
-            buffer[0+start] = 0xe9;
-            buffer[1+start] = (entry_offset-5) as _; 
-            buffer[2+start] = 0 as _; 
-            buffer[3+start] = 0 as _; 
-            buffer[4+start] = 0 as _; 
+            buffer[0 + start] = 0xe9;
+            buffer[1 + start] = (entry_offset - 5) as _;
+            buffer[2 + start] = 0 as _;
+            buffer[3 + start] = 0 as _;
+            buffer[4 + start] = 0 as _;
         } else {
-            buffer[0+start] = 0xeb;
-            buffer[1+start] = (entry_offset-2) as _; 
+            buffer[0 + start] = 0xeb;
+            buffer[1 + start] = (entry_offset - 2) as _;
         }
         println!("== after patch ==");
-        show_disassemble(&buffer[start..start+size], 5);
-        for i in start..start+size {
+        show_disassemble(&buffer[start..start + size], 5);
+        for i in start..start + size {
             buf_writer.write(&[buffer[i]])?;
         }
         buf_writer.flush().unwrap();
@@ -66,8 +66,8 @@ pub fn show_disassemble(bytes: &[u8], max_line: u32) {
     let mut instruction = Instruction::default();
     let mut i = 0;
     while decoder.can_decode() {
-        i +=1;
-        if i> max_line {
+        i += 1;
+        if i > max_line {
             println!("....\n");
             break;
         }
